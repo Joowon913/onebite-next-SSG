@@ -1,6 +1,7 @@
 import { GetStaticPropsContext, InferGetStaticPropsType } from "next";
 import style from "./[id].module.css"
 import fetchOneBooks from "@/lib/fetch-one-books";
+import { useRouter } from "next/router";
 
 export const getStaticPaths = () => {
   return {
@@ -9,7 +10,10 @@ export const getStaticPaths = () => {
       { params: { id: "2" } },
       { params: { id: "3" } },
     ],
-    fallback : false,
+    fallback : true,
+    // false : 404 Not Found
+    // blocking : SSR 방식
+    // true : SSR 방식 + 데이터가 없는 폴백 상태의 페이지부터 반환
   };
 };
 
@@ -18,6 +22,12 @@ export const getStaticProps = async (
 ) => {
   const id = context.params!.id;
   const book = await fetchOneBooks(Number(id));
+
+  if (!book) {
+    return {
+      notFound: true,
+    };
+  }
 
   return {
     props: {
@@ -29,7 +39,10 @@ export const getStaticProps = async (
 export default function Page({
   book,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
-  if(!book) return "문제가 발생했습니다 다시 시도하세요";
+  const router = useRouter();
+
+  if (router.isFallback) return "로딩 중입니다."
+  if (!book) return "문제가 발생했습니다. 다시 시도하세요.";
 
   const {
     title, 
